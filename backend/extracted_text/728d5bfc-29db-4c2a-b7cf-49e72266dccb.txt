@@ -1,0 +1,50 @@
+[Page 1]
+Elvis Dsouza
++91 98670 29285 jdsouzaelvis88@gmail.com jlinkedin.com/in/elvis-dsouza jgithub.com/elvis154 jMumbai, India
+Education
+St. Francis Institute of Technology Mumbai, India
+Bachelor of Engineering in Computer Engineering Aug 2022 – May 2026
+–GPA: 7.0 / 10
+Experience
+Western Railway Mumbai, India
+Software Engineer Intern May 2025 – Jun 2025
+–Architected and deployed a full-stack workflow automation system adopted by 50+ railway staff, eliminating redundant
+manual processes across 3 departments.
+–Engineered scalable RESTful APIs using FlaskwithJWTauthentication and role-based middleware to handle concurrent staff
+requests securely.
+–Built a responsive React.js frontend; managed 100K+ records inMySQL with optimized indexing, improving processing
+speed by 30%.
+–Reduced manual paperwork by 40%through end-to-end automation; validated all APIs using structured Postman test suites.
+Nashabandi Mandal NGO Mumbai, India
+Web Development Intern Aug 2024 – Nov 2024
+–Developed and deployed a responsive React.js website, increasing user engagement by 25%through improved UI/UX and
+mobile-first design.
+–Optimized frontend performance via lazy loading, code splitting, and asset compression, reducing page load time by 35%.
+–Managed end-to-end production deployment including hosting setup, domain configuration, and DNS management.
+Projects
+Forecast Flow jPython, Azure, Databricks, Random Forest jGitHub Aug 2024 – Oct 2024
+–Built REST API backend to serve time-series forecasting data with automated preprocessing and feature engineering pipelines.
+–Integrated Random Forest into a scalable prediction service; deployed workflows on AzureandDatabricks for distributed
+large-scale data processing.
+Synthetica.in jFlask, DistilBERT, TF-IDF, Firebase jsynthetica-3bf2d.web.app jGitHub Jan 2024 – Present
+–Co-founded an AI-content detection platform serving 300+ users with85%+accuracy across multiple content types.
+–Designed REST APIs in Flaskfor inference and user workflows; built ensemble ML pipeline using TF-IDF,Logistic
+Regression, andDistilBERT.
+–Implemented Firebase authentication with session management and role-based access control for admin and end-user flows.
+SFIT-STOCKS jNode.js, Express.js, MongoDB, JWT jGitHub Nov 2024 – Feb 2025
+–Built a production-grade inventory management system actively used by college staff across multiple departments.
+–Designed RESTful APIs using Node.js andExpress.js for full CRUD operations; modeled data in MongoDB with optimized
+schema for efficient querying.
+–Implemented JWT-based authentication and RBAC to enforce secure multi-role system access.
+Technical Skills
+Languages: Python, JavaScript, Java, SQL
+Frameworks: Flask, React.js, Django, Node.js, Express.js
+Databases: MySQL, MongoDB, Firebase Firestore, REST API
+Cloud & DevOps: Azure, Databricks, Docker
+Achievements & Leadership
+Technical Leadership & Recognition
+–1st Prize at Prakalp SFIT Project Competition — won in 2 consecutive years.
+–Tech Team Lead at Student Council and CSI; planned and executed technical infrastructure for multiple college-wide events.
+–Conducted a hands-on workshop on Large Language Models (LLMs) for150+ participants, covering prompt engineering,
+RAG and fine-tuning basics.
+–Participated in 8+ hackathons; independently developed and deployed 10+ production websites for external clients.
