@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useRef,
@@ -519,11 +518,6 @@ export default function App() {
 
       setStatus("");
 
-      /*
-       * Immediately add the user question
-       * so it animates from the right.
-       */
-
       const temporaryUserMessage = {
         role: "user",
         message: q,
@@ -589,11 +583,6 @@ export default function App() {
           resp.confidence ?? null
         );
 
-        /*
-         * Use backend history as the
-         * source of truth after response.
-         */
-
         setHistory(
           Array.isArray(
             resp.history
@@ -628,11 +617,6 @@ export default function App() {
         }
 
         setStatus(message);
-
-        /*
-         * Remove temporary user
-         * message if request failed.
-         */
 
         setHistory((prev) =>
           prev.filter(
@@ -812,9 +796,7 @@ export default function App() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gray-50 text-gray-900">
 
-      {/* ======================================================
-          HEADER
-      ====================================================== */}
+      {/* HEADER */}
 
       <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5">
 
@@ -876,9 +858,7 @@ export default function App() {
 
       </header>
 
-      {/* ======================================================
-          UPLOAD SCREEN
-      ====================================================== */}
+      {/* UPLOAD SCREEN */}
 
       {!docId && (
         <main className="flex flex-1 items-center justify-center overflow-y-auto px-5 py-10">
@@ -983,16 +963,12 @@ export default function App() {
         </main>
       )}
 
-      {/* ======================================================
-          CHAT APPLICATION
-      ====================================================== */}
+      {/* CHAT APPLICATION */}
 
       {docId && (
         <div className="flex min-h-0 flex-1 overflow-hidden">
 
-          {/* ==================================================
-              LEFT CHAT HISTORY
-          ================================================== */}
+          {/* LEFT CHAT HISTORY */}
 
           <aside
             className={`hidden w-72 flex-shrink-0 border-r border-gray-200 bg-white lg:flex lg:flex-col ${
@@ -1079,9 +1055,7 @@ export default function App() {
 
           </aside>
 
-          {/* ==================================================
-              MAIN CHAT
-          ================================================== */}
+          {/* MAIN CHAT */}
 
           <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
 
@@ -1127,9 +1101,7 @@ export default function App() {
 
             </div>
 
-            {/* =================================================
-                CHAT SCROLL AREA
-            ================================================= */}
+            {/* CHAT SCROLL AREA */}
 
             <div
               ref={chatContainerRef}
@@ -1166,9 +1138,7 @@ export default function App() {
                     </div>
                   )}
 
-                {/* =================================================
-                    MESSAGES
-                ================================================= */}
+                {/* MESSAGES */}
 
                 <div className="space-y-8">
 
@@ -1252,9 +1222,7 @@ export default function App() {
                     }
                   )}
 
-                  {/* =================================================
-                      THINKING
-                  ================================================= */}
+                  {/* THINKING */}
 
                   {asking && (
                     <div className="message-ai flex gap-3">
@@ -1276,9 +1244,7 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* =================================================
-                      LATEST ANSWER EXTRA DETAILS
-                  ================================================= */}
+                  {/* LATEST ANSWER EXTRA DETAILS */}
 
                   {!asking &&
                     formattedAnswer && (
@@ -1354,8 +1320,7 @@ export default function App() {
                                     [
                                       label,
                                       values,
-                                    ],
-                                    i
+                                    ]
                                   ) =>
                                     Array.isArray(
                                       values
@@ -1453,9 +1418,7 @@ export default function App() {
 
             </div>
 
-            {/* =================================================
-                STATUS
-            ================================================= */}
+            {/* STATUS */}
 
             {status && (
               <div className="absolute bottom-24 left-1/2 z-20 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-center text-xs text-gray-600 shadow-lg">
@@ -1463,9 +1426,7 @@ export default function App() {
               </div>
             )}
 
-            {/* =================================================
-                INPUT AREA
-            ================================================= */}
+            {/* INPUT AREA */}
 
             <div className="flex-shrink-0 border-t border-gray-200 bg-white px-4 py-4">
 
@@ -1544,9 +1505,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ======================================================
-          FOOTER ONLY FOR UPLOAD SCREEN
-      ====================================================== */}
+      {/* FOOTER ONLY FOR UPLOAD SCREEN */}
 
       {!docId && (
         <footer className="flex-shrink-0 border-t border-gray-200 bg-white">
@@ -1559,7 +1518,8 @@ export default function App() {
 
             <p className="mt-1 text-xs text-gray-400">
               Answers are generated from
-              the uploaded document.
+              the uploaded
+              document.
             </p>
 
           </div>
@@ -1570,4 +1530,3 @@ export default function App() {
     </div>
   );
 }
- 
