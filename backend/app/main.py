@@ -8,6 +8,12 @@ from pathlib import Path
 from typing import Optional
 from datetime import datetime
 
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from pydantic import BaseModel, Field
+
 # ============================================================
 # PATH SETUP
 # ============================================================
@@ -18,15 +24,6 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 # ============================================================
-# FASTAPI IMPORTS
-# ============================================================
-
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
-
-# ============================================================
 # APPLICATION IMPORTS
 # ============================================================
 
@@ -35,7 +32,7 @@ from app.pdf_utils import extract_text_from_pdf
 from app.llm_client import (
     generate_answer,
     get_llm_stats,
-    clear_cache
+    clear_cache,
 )
 
 from app import database
@@ -46,7 +43,7 @@ from app import database
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
 logger = logging.getLogger(__name__)
@@ -66,9 +63,9 @@ TEXT_DIR.mkdir(parents=True, exist_ok=True)
 # ============================================================
 
 app = FastAPI(
-    title="AI Document Reader API",
-    description="Upload PDF documents and ask questions using Gemini AI.",
-    version="3.1.0"
+    title="EduBridge AI Document Reader API",
+    description="Upload PDF documents and ask questions using AI.",
+    version="3.1.0",
 )
 
 # ============================================================
@@ -80,14 +77,18 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 # ============================================================
 # DATABASE
 # ============================================================
 
-database.init_db()
+try:
+    database.init_db()
+    logger.info("Database initialized successfully.")
+except Exception as e:
+    logger.exception("Database initialization failed: %s", e)
 
 # ============================================================
 # REQUEST / RESPONSE MODELS
@@ -102,7 +103,7 @@ class AskRequest(BaseModel):
 
 class AskResponse(BaseModel):
     answer: str
-    model: str
+    model: str = "unknown"
     confidence: Optional[float] = None
     processing_time_ms: Optional[float] = None
 
@@ -149,6 +150,42 @@ class ClearCacheResponse(BaseModel):
 
 
 # ============================================================
+# ROOT ROUTE
+# ============================================================
+
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "service": "EduBridge AI Document Reader API",
+        "version": "3.1.0",
+        "message": "EduBridge backend is running successfully.",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
+# ============================================================
+# API INFO
+# ============================================================
+
+@app.get("/api")
+async def api_info():
+    return {
+        "service": "EduBridge API",
+        "status": "online",
+        "version": "3.1.0",
+        "endpoints": {
+            "health": "/health",
+            "upload": "/upload",
+            "ask": "/ask",
+            "docs": "/docs",
+            "stats": "/stats",
+        },
+    }
+
+
+# ============================================================
 # HELPER FUNCTIONS
 # ============================================================
 
@@ -174,11 +211,13 @@ def load_document_text(doc_id: str) -> str:
 
     text_path = get_text_path(doc_id)
 
+    # --------------------------------------------------------
     # Try cached extracted text first
+    # --------------------------------------------------------
+
     if text_path.exists():
 
         try:
-
             text = text_path.read_text(
                 encoding="utf-8"
             )
@@ -189,14 +228,18 @@ def load_document_text(doc_id: str) -> str:
         except Exception as e:
 
             logger.warning(
-                f"Could not read cached text for {doc_id}: {e}"
+                "Could not read cached text for %s: %s",
+                doc_id,
+                e,
             )
 
-    # Fall back to extracting from PDF
+    # --------------------------------------------------------
+    # Fall back to PDF
+    # --------------------------------------------------------
+
     pdf_path = get_pdf_path(doc_id)
 
     if not pdf_path.exists():
-
         raise FileNotFoundError(
             "Document not found"
         )
@@ -211,7 +254,10 @@ def load_document_text(doc_id: str) -> str:
             "Document contains no extractable text"
         )
 
+    # --------------------------------------------------------
     # Save extracted text
+    # --------------------------------------------------------
+
     try:
 
         text_path.write_text(
@@ -222,7 +268,8 @@ def load_document_text(doc_id: str) -> str:
     except Exception as e:
 
         logger.warning(
-            f"Could not save extracted text: {e}"
+            "Could not save extracted text: %s",
+            e,
         )
 
     return text
@@ -235,16 +282,14 @@ def load_document_text(doc_id: str) -> str:
 
 def build_history(doc_id: str) -> list:
 
-    rows = database.get_history(
-        doc_id
-    )
+    rows = database.get_history(doc_id)
 
     history = []
 
     for row in rows:
 
         # ----------------------------------------------------
-        # SQLAlchemy ORM OBJECT
+        # SQLAlchemy ORM object
         # ----------------------------------------------------
 
         if hasattr(row, "timestamp"):
@@ -252,23 +297,23 @@ def build_history(doc_id: str) -> list:
             timestamp = getattr(
                 row,
                 "timestamp",
-                None
+                None,
             )
 
             role = getattr(
                 row,
                 "role",
-                ""
+                "",
             )
 
             message = getattr(
                 row,
                 "message",
-                ""
+                "",
             )
 
         # ----------------------------------------------------
-        # SQLALCHEMY ROW / TUPLE
+        # SQLAlchemy Row / Tuple
         # ----------------------------------------------------
 
         else:
@@ -278,7 +323,7 @@ def build_history(doc_id: str) -> list:
                 mapping = getattr(
                     row,
                     "_mapping",
-                    None
+                    None,
                 )
 
                 if mapping is not None:
@@ -287,21 +332,21 @@ def build_history(doc_id: str) -> list:
                         "timestamp",
                         mapping.get(
                             "created_at",
-                            None
-                        )
+                            None,
+                        ),
                     )
 
                     role = mapping.get(
                         "role",
-                        ""
+                        "",
                     )
 
                     message = mapping.get(
                         "message",
                         mapping.get(
                             "content",
-                            ""
-                        )
+                            "",
+                        ),
                     )
 
                 else:
@@ -313,13 +358,14 @@ def build_history(doc_id: str) -> list:
             except Exception as e:
 
                 logger.warning(
-                    f"Could not parse history row: {e}"
+                    "Could not parse history row: %s",
+                    e,
                 )
 
                 continue
 
         # ----------------------------------------------------
-        # FORMAT TIMESTAMP
+        # Format timestamp
         # ----------------------------------------------------
 
         if timestamp is None:
@@ -328,26 +374,24 @@ def build_history(doc_id: str) -> list:
 
         elif hasattr(
             timestamp,
-            "isoformat"
+            "isoformat",
         ):
 
             timestamp = timestamp.isoformat()
 
         else:
 
-            timestamp = str(
-                timestamp
-            )
+            timestamp = str(timestamp)
 
         # ----------------------------------------------------
-        # ADD HISTORY
+        # Add history
         # ----------------------------------------------------
 
         history.append(
             {
                 "timestamp": timestamp,
                 "role": str(role),
-                "message": str(message)
+                "message": str(message),
             }
         )
 
@@ -361,76 +405,81 @@ def build_history(doc_id: str) -> list:
 
 @app.post(
     "/upload",
-    response_model=UploadResponse
+    response_model=UploadResponse,
 )
 async def upload_pdf(
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
 ):
 
     if not file.filename:
 
         raise HTTPException(
             status_code=400,
-            detail="Filename is required"
+            detail="Filename is required",
         )
+
+    # --------------------------------------------------------
+    # PDF validation
+    # --------------------------------------------------------
 
     if not file.filename.lower().endswith(".pdf"):
 
         raise HTTPException(
             status_code=400,
-            detail="Only PDF files are supported"
+            detail="Only PDF files are supported",
         )
 
-    doc_id = str(
-        uuid.uuid4()
-    )
+    doc_id = str(uuid.uuid4())
 
-    pdf_path = get_pdf_path(
-        doc_id
-    )
-
-    text_path = get_text_path(
-        doc_id
-    )
+    pdf_path = get_pdf_path(doc_id)
+    text_path = get_text_path(doc_id)
 
     try:
 
+        # ----------------------------------------------------
         # Save PDF
+        # ----------------------------------------------------
+
         with open(
             pdf_path,
-            "wb"
+            "wb",
         ) as output_file:
 
             shutil.copyfileobj(
                 file.file,
-                output_file
+                output_file,
             )
 
         logger.info(
-            f"PDF saved: {pdf_path}"
+            "PDF saved: %s",
+            pdf_path,
         )
 
+        # ----------------------------------------------------
         # Extract text
+        # ----------------------------------------------------
+
         text = extract_text_from_pdf(
             str(pdf_path)
         )
 
-        if not text or len(
-            text.strip()
-        ) < 10:
+        if not text or len(text.strip()) < 10:
 
             raise HTTPException(
                 status_code=400,
                 detail=(
                     "The PDF contains no extractable text. "
                     "It may be scanned or image-based."
-                )
+                ),
             )
 
+        # ----------------------------------------------------
         # Save extracted text
+        # ----------------------------------------------------
+
         text_path.write_text(
             text,
-            encoding="utf-8"
+            encoding="utf-8",
         )
 
         cleaned_text = text.strip()
@@ -445,21 +494,25 @@ async def upload_pdf(
 
         excerpt = cleaned_text[:1000]
 
+        # ----------------------------------------------------
         # Save upload history
+        # ----------------------------------------------------
+
         database.add_chat_entry(
             doc_id,
             "system",
-            "Document uploaded successfully."
+            "Document uploaded successfully.",
         )
 
         database.add_chat_entry(
             doc_id,
             "system",
-            f"Document contains approximately {word_count} words."
+            f"Document contains approximately {word_count} words.",
         )
 
         logger.info(
-            f"Document uploaded successfully: {doc_id}"
+            "Document uploaded successfully: %s",
+            doc_id,
         )
 
         return UploadResponse(
@@ -467,7 +520,7 @@ async def upload_pdf(
             filename=file.filename,
             text_excerpt=excerpt,
             word_count=word_count,
-            character_count=character_count
+            character_count=character_count,
         )
 
     except HTTPException:
@@ -483,7 +536,8 @@ async def upload_pdf(
     except Exception as e:
 
         logger.exception(
-            f"Upload failed: {e}"
+            "Upload failed: %s",
+            e,
         )
 
         if pdf_path.exists():
@@ -494,7 +548,7 @@ async def upload_pdf(
 
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to process PDF: {str(e)}"
+            detail=f"Failed to process PDF: {str(e)}",
         )
 
 
@@ -505,117 +559,128 @@ async def upload_pdf(
 
 @app.post(
     "/ask",
-    response_model=AskResponse
+    response_model=AskResponse,
 )
 async def ask_question(
-    req: AskRequest
+    req: AskRequest,
 ):
 
     try:
 
+        # ----------------------------------------------------
+        # Validate question
+        # ----------------------------------------------------
+
         question = req.question.strip()
 
-        # Validate question
         if not question:
 
             raise HTTPException(
                 status_code=400,
-                detail="Question cannot be empty"
+                detail="Question cannot be empty",
             )
 
         if len(question) > 2000:
 
             raise HTTPException(
                 status_code=400,
-                detail="Question is too long"
+                detail="Question is too long",
             )
 
+        # ----------------------------------------------------
         # Check document
-        if not document_exists(
-            req.doc_id
-        ):
+        # ----------------------------------------------------
+
+        if not document_exists(req.doc_id):
 
             raise HTTPException(
                 status_code=404,
-                detail="Document not found"
+                detail="Document not found",
             )
 
-        print("\n" + "=" * 70)
-        print("ASK REQUEST")
-        print("Document ID:", req.doc_id)
-        print("Question:", question)
-        print("=" * 70)
+        logger.info(
+            "ASK REQUEST | Document: %s | Question: %s",
+            req.doc_id,
+            question,
+        )
 
+        # ----------------------------------------------------
         # Load document
+        # ----------------------------------------------------
+
         text = load_document_text(
             req.doc_id
         )
 
-        if not text or len(
-            text.strip()
-        ) < 10:
+        if not text or len(text.strip()) < 10:
 
             raise HTTPException(
                 status_code=400,
-                detail="Document contains no extractable text"
+                detail=(
+                    "Document contains no extractable text"
+                ),
             )
 
-        print(
-            "Document loaded"
+        logger.info(
+            "Document loaded. Characters: %s",
+            len(text),
         )
 
-        print(
-            "Document characters:",
-            len(text)
-        )
-
+        # ----------------------------------------------------
         # Save user question
+        # ----------------------------------------------------
+
         database.add_chat_entry(
             req.doc_id,
             "user",
-            question
+            question,
         )
 
-        print(
+        # ----------------------------------------------------
+        # Generate AI answer
+        # ----------------------------------------------------
+
+        logger.info(
             "Calling generate_answer()..."
         )
 
-        # Run Gemini API request in a worker thread
         llm_resp = await asyncio.to_thread(
             generate_answer,
             question=question,
             context=text,
-            use_cache=req.use_cache
+            use_cache=req.use_cache,
         )
 
-        print(
-            "LLM RESPONSE:"
+        logger.info(
+            "LLM response received."
         )
 
-        print(
-            llm_resp
-        )
-
+        # ----------------------------------------------------
         # Validate response
+        # ----------------------------------------------------
+
         if not isinstance(
             llm_resp,
-            dict
+            dict,
         ):
 
             raise RuntimeError(
-                f"generate_answer() returned "
+                "generate_answer() returned "
                 f"{type(llm_resp)}, expected dict"
             )
 
-        # Extract fields
+        # ----------------------------------------------------
+        # Extract response fields
+        # ----------------------------------------------------
+
         answer = llm_resp.get(
             "answer",
-            "I could not generate an answer."
+            "I could not generate an answer.",
         )
 
         model = llm_resp.get(
             "model",
-            "unknown"
+            "unknown",
         )
 
         confidence = llm_resp.get(
@@ -628,7 +693,7 @@ async def ask_question(
 
         suggested_questions = llm_resp.get(
             "suggested_questions",
-            []
+            [],
         )
 
         fallback_from = llm_resp.get(
@@ -637,7 +702,7 @@ async def ask_question(
 
         structured_data = llm_resp.get(
             "structured_data",
-            {}
+            {},
         )
 
         formatted_answer = llm_resp.get(
@@ -646,22 +711,59 @@ async def ask_question(
 
         citations = llm_resp.get(
             "citations",
-            []
+            [],
         )
 
+        # ----------------------------------------------------
+        # Ensure correct types
+        # ----------------------------------------------------
+
+        if not isinstance(
+            answer,
+            str,
+        ):
+            answer = str(answer)
+
+        if not isinstance(
+            suggested_questions,
+            list,
+        ):
+            suggested_questions = []
+
+        if not isinstance(
+            structured_data,
+            dict,
+        ):
+            structured_data = {}
+
+        if not isinstance(
+            citations,
+            list,
+        ):
+            citations = []
+
+        # ----------------------------------------------------
         # Save assistant answer
+        # ----------------------------------------------------
+
         database.add_chat_entry(
             req.doc_id,
             "assistant",
-            answer
+            answer,
         )
 
+        # ----------------------------------------------------
         # Build history
+        # ----------------------------------------------------
+
         history = build_history(
             req.doc_id
         )
 
+        # ----------------------------------------------------
         # Return response
+        # ----------------------------------------------------
+
         return AskResponse(
             answer=answer,
             model=model,
@@ -672,7 +774,7 @@ async def ask_question(
             fallback_from=fallback_from,
             structured_data=structured_data,
             formatted_answer=formatted_answer,
-            citations=citations
+            citations=citations,
         )
 
     except HTTPException:
@@ -681,30 +783,25 @@ async def ask_question(
     except RuntimeError as e:
 
         logger.warning(
-            f"Runtime error in ask endpoint: {e}"
+            "Runtime error in ask endpoint: %s",
+            e,
         )
 
         raise HTTPException(
             status_code=503,
-            detail=f"AI model unavailable: {e}"
+            detail=f"AI model unavailable: {str(e)}",
         )
 
     except Exception as e:
 
-        print("\n" + "=" * 70)
-        print("ASK ENDPOINT ERROR")
-        print("=" * 70)
-        print(type(e).__name__)
-        print(str(e))
-        print("=" * 70)
-
         logger.exception(
-            "Question processing failed"
+            "Question processing failed: %s",
+            e,
         )
 
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail=str(e),
         )
 
 
@@ -715,19 +812,17 @@ async def ask_question(
 
 @app.get(
     "/docs/{doc_id}/history",
-    response_model=HistoryResponse
+    response_model=HistoryResponse,
 )
 async def get_history(
-    doc_id: str
+    doc_id: str,
 ):
 
-    if not document_exists(
-        doc_id
-    ):
+    if not document_exists(doc_id):
 
         raise HTTPException(
             status_code=404,
-            detail="Document not found"
+            detail="Document not found",
         )
 
     try:
@@ -738,18 +833,19 @@ async def get_history(
 
         return HistoryResponse(
             history=history,
-            total_messages=len(history)
+            total_messages=len(history),
         )
 
     except Exception as e:
 
         logger.exception(
-            f"Failed to get history: {e}"
+            "Failed to get history: %s",
+            e,
         )
 
         raise HTTPException(
             status_code=500,
-            detail="Failed to retrieve chat history"
+            detail="Failed to retrieve chat history",
         )
 
 
@@ -762,7 +858,7 @@ async def get_history(
     "/docs/{doc_id}"
 )
 async def delete_document(
-    doc_id: str
+    doc_id: str,
 ):
 
     pdf_path = get_pdf_path(
@@ -776,7 +872,10 @@ async def delete_document(
     file_deleted = False
     text_deleted = False
 
+    # --------------------------------------------------------
     # Delete PDF
+    # --------------------------------------------------------
+
     if pdf_path.exists():
 
         try:
@@ -788,10 +887,14 @@ async def delete_document(
         except Exception as e:
 
             logger.error(
-                f"Failed to delete PDF: {e}"
+                "Failed to delete PDF: %s",
+                e,
             )
 
+    # --------------------------------------------------------
     # Delete extracted text
+    # --------------------------------------------------------
+
     if text_path.exists():
 
         try:
@@ -803,10 +906,14 @@ async def delete_document(
         except Exception as e:
 
             logger.error(
-                f"Failed to delete extracted text: {e}"
+                "Failed to delete extracted text: %s",
+                e,
             )
 
+    # --------------------------------------------------------
     # Delete chat history
+    # --------------------------------------------------------
+
     try:
 
         database.clear_history(
@@ -816,18 +923,20 @@ async def delete_document(
     except Exception as e:
 
         logger.error(
-            f"Failed to clear history: {e}"
+            "Failed to clear history: %s",
+            e,
         )
 
     logger.info(
-        f"Document deleted: {doc_id}"
+        "Document deleted: %s",
+        doc_id,
     )
 
     return {
         "status": "success",
         "message": "Document and chat history deleted",
         "file_deleted": file_deleted,
-        "text_deleted": text_deleted
+        "text_deleted": text_deleted,
     }
 
 
@@ -838,20 +947,34 @@ async def delete_document(
 
 @app.post(
     "/cache/clear",
-    response_model=ClearCacheResponse
+    response_model=ClearCacheResponse,
 )
 async def clear_response_cache():
 
-    clear_cache()
+    try:
 
-    logger.info(
-        "LLM cache cleared"
-    )
+        clear_cache()
 
-    return ClearCacheResponse(
-        status="success",
-        message="LLM response cache cleared successfully"
-    )
+        logger.info(
+            "LLM cache cleared"
+        )
+
+        return ClearCacheResponse(
+            status="success",
+            message="LLM response cache cleared successfully",
+        )
+
+    except Exception as e:
+
+        logger.exception(
+            "Failed to clear cache: %s",
+            e,
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to clear cache",
+        )
 
 
 # ============================================================
@@ -864,7 +987,21 @@ async def clear_response_cache():
 )
 async def get_stats():
 
-    return get_llm_stats()
+    try:
+
+        return get_llm_stats()
+
+    except Exception as e:
+
+        logger.exception(
+            "Failed to get LLM stats: %s",
+            e,
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve LLM statistics",
+        )
 
 
 # ============================================================
@@ -879,44 +1016,35 @@ async def health_check():
 
     return {
         "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
 
-        "timestamp":
-            datetime.now().isoformat(),
-
-        "gemini_key_loaded":
-            bool(
-                os.environ.get(
-                    "GEMINI_API_KEY"
-                )
-            ),
-
-        "openai_key_loaded":
-            bool(
-                os.environ.get(
-                    "OPENAI_API_KEY"
-                )
-            ),
-
-        "gemini_model":
+        "gemini_key_loaded": bool(
             os.environ.get(
-                "GEMINI_MODEL",
-                "gemini-flash-latest"
-            ),
+                "GEMINI_API_KEY"
+            )
+        ),
 
-        "openai_model":
+        "openai_key_loaded": bool(
             os.environ.get(
-                "OPENAI_MODEL",
-                "gpt-5-mini"
-            ),
+                "OPENAI_API_KEY"
+            )
+        ),
 
-        "upload_dir_exists":
-            UPLOAD_DIR.exists(),
+        "gemini_model": os.environ.get(
+            "GEMINI_MODEL",
+            "gemini-flash-latest",
+        ),
 
-        "text_dir_exists":
-            TEXT_DIR.exists(),
+        "openai_model": os.environ.get(
+            "OPENAI_MODEL",
+            "gpt-5-mini",
+        ),
 
-        "database_initialized":
-            True
+        "upload_dir_exists": UPLOAD_DIR.exists(),
+
+        "text_dir_exists": TEXT_DIR.exists(),
+
+        "database_initialized": True,
     }
 
 
@@ -930,18 +1058,20 @@ async def health_check():
 )
 async def http_exception_handler(
     request: Request,
-    exc: HTTPException
+    exc: HTTPException,
 ):
 
     logger.warning(
-        f"HTTP {exc.status_code}: {exc.detail}"
+        "HTTP %s: %s",
+        exc.status_code,
+        exc.detail,
     )
 
     return JSONResponse(
         status_code=exc.status_code,
         content={
             "detail": exc.detail
-        }
+        },
     )
 
 
@@ -950,11 +1080,12 @@ async def http_exception_handler(
 )
 async def general_exception_handler(
     request: Request,
-    exc: Exception
+    exc: Exception,
 ):
 
     logger.exception(
-        f"Unhandled exception: {exc}"
+        "Unhandled exception: %s",
+        exc,
     )
 
     return JSONResponse(
@@ -964,7 +1095,7 @@ async def general_exception_handler(
                 "An unexpected error occurred. "
                 "Please try again."
             )
-        }
+        },
     )
 
 
@@ -972,15 +1103,21 @@ async def general_exception_handler(
 # START SERVER
 # ============================================================
 
-
 if __name__ == "__main__":
 
     import uvicorn
 
+    port = int(
+        os.environ.get(
+            "PORT",
+            "8000",
+        )
+    )
+
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
+        port=port,
+        reload=False,
+        log_level="info",
     )
