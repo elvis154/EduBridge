@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top left, rgba(124, 58, 237, 0.18), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.14), transparent 22%),
+    #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(79, 70, 229, 0.16);
+}
+
+.hero-deco {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hero-deco span {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+  opacity: 0.65;
+}
+
+.hero-deco .dot-1 {
+  width: 220px;
+  height: 220px;
+  background: rgba(124, 58, 237, 0.14);
+  top: -40px;
+  left: -40px;
+}
+
+.hero-deco .dot-2 {
+  width: 180px;
+  height: 180px;
+  background: rgba(59, 130, 246, 0.14);
+  top: 60px;
+  right: -60px;
+}
+
+.hero-deco .dot-3 {
+  width: 240px;
+  height: 240px;
+  background: rgba(14, 165, 233, 0.08);
+  bottom: -70px;
+  left: 40%;
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply rounded-[2rem] border border-white/60 bg-white/75 backdrop-blur-xl shadow-soft;
+  }
+}

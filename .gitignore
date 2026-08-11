@@ -1,0 +1,34 @@
+# Python
+backend/.venv
+backend/__pycache__
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/*.env
+
+# Node
+frontend/node_modules
+frontend/dist
+frontend/.vite
+frontend/*.log
+
+# system files
+.DS_Store
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+
+# macOS
+.DS_Store
