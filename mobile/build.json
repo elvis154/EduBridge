@@ -1,0 +1,49 @@
+{
+  "id": "85d1864d-e015-49e9-b027-1def7f279586",
+  "status": "ERRORED",
+  "platform": "ANDROID",
+  "error": {
+    "errorCode": "UNKNOWN_ERROR",
+    "message": "Unknown error. See logs of the Build complete hook build phase for more information."
+  },
+  "artifacts": {},
+  "fingerprint": {
+    "id": "01a001fe-2abd-779b-a21f-6b1a0ac74f24",
+    "hash": "6cadd28f3511ad97f5ffcbf4eea2fb61c49ba4bf"
+  },
+  "initiatingActor": {
+    "id": "eca2430f-fa39-43c6-84d9-e0540bb8ea54",
+    "displayName": "elvis312"
+  },
+  "logFiles": [
+    "https://storage.googleapis.com/eas-workflows-production/logs/b7ebf642-bab7-44a5-8969-97ba6b8a70bf/85d1864d-e015-49e9-b027-1def7f279586/2026-08-14T20%3A37%3A14Z-0530a636-0642-435e-870c-58cc246a442a.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260814%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260814T203808Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=29252387514744d872315c1e37c321582452451c4c8099de4db34b4632ddcb72d9d7b964eaa8fd8ae17d9f05203cb4818e4dfbc4486605837360bb7247c5bf8ffd260703a6cf36677074b698fe398465e65e253e9c209f6dc558f39eb38fe097d8397be7d2582176aa8f8d56e40c50936ed58d4ef3f70d9a179350e91b9b333284b7ae856a3185025ea4bf03a9e1bd88efb5e235be006fce000d5bcd8d775cb7def14d52af091cc18e80e1af92597ee11416a7d685f3b2326606396874800c02e1b45292e7783b4e88b379a621f213b82490c49260b1e0d3c31274b60a3f591b73a2fc3955ff9ba3a7972d0f6f0db36b26fd175b1212327aeaac0d7f3d9b861d"
+  ],
+  "app": {
+    "id": "b7ebf642-bab7-44a5-8969-97ba6b8a70bf",
+    "name": "edubridge",
+    "slug": "edubridge",
+    "ownerAccount": {
+      "id": "3db4708a-73c1-4028-9d02-1ea708196589",
+      "name": "elvis312"
+    }
+  },
+  "distribution": "INTERNAL",
+  "buildProfile": "preview",
+  "appIdentifier": "com.elvis312steam.edubridge",
+  "sdkVersion": "57.0.0",
+  "appVersion": "1.0.0",
+  "appBuildVersion": "1",
+  "gitCommitHash": "98faaafceb3048c692bdb319259677816cea3210",
+  "gitCommitMessage": "Add Gemini dependency",
+  "priority": "NORMAL_PLUS",
+  "createdAt": "2026-08-14T20:37:09.397Z",
+  "updatedAt": "2026-08-14T20:37:26.424Z",
+  "completedAt": "2026-08-14T20:37:26.205Z",
+  "expirationDate": "2026-08-28T20:37:09.429Z",
+  "isForIosSimulator": false,
+  "metrics": {
+    "buildWaitTime": 4710,
+    "buildQueueTime": 5200,
+    "buildDuration": 6898
+  }
+}
