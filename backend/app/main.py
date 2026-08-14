@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 
 from pydantic import BaseModel, Field
 
+
 # ============================================================
 # PATH SETUP
 # ============================================================
@@ -22,6 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
+
 
 # ============================================================
 # APPLICATION IMPORTS
@@ -37,6 +39,7 @@ from app.llm_client import (
 
 from app import database
 
+
 # ============================================================
 # LOGGING
 # ============================================================
@@ -48,6 +51,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
 # ============================================================
 # DIRECTORIES
 # ============================================================
@@ -55,8 +59,16 @@ logger = logging.getLogger(__name__)
 UPLOAD_DIR = BASE_DIR / "uploads"
 TEXT_DIR = BASE_DIR / "extracted_text"
 
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-TEXT_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_DIR.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
+TEXT_DIR.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
 
 # ============================================================
 # FASTAPI APPLICATION
@@ -68,17 +80,22 @@ app = FastAPI(
     version="3.1.0",
 )
 
+
 # ============================================================
 # CORS
 # ============================================================
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://edubridge-frontend.onrender.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # ============================================================
 # DATABASE
@@ -87,13 +104,17 @@ app.add_middleware(
 try:
     database.init_db()
     logger.info("Database initialized successfully.")
+
 except Exception as e:
-    logger.exception("Database initialization failed: %s", e)
+    logger.exception(
+        "Database initialization failed: %s",
+        e,
+    )
+
 
 # ============================================================
 # REQUEST / RESPONSE MODELS
 # ============================================================
-
 
 class AskRequest(BaseModel):
     doc_id: str
@@ -103,8 +124,11 @@ class AskRequest(BaseModel):
 
 class AskResponse(BaseModel):
     answer: str
+
     model: str = "unknown"
+
     confidence: Optional[float] = None
+
     processing_time_ms: Optional[float] = None
 
     suggested_questions: list = Field(
@@ -130,9 +154,13 @@ class AskResponse(BaseModel):
 
 class UploadResponse(BaseModel):
     doc_id: str
+
     filename: str
+
     text_excerpt: str
+
     word_count: int
+
     character_count: int
 
 
@@ -146,6 +174,7 @@ class HistoryResponse(BaseModel):
 
 class ClearCacheResponse(BaseModel):
     status: str
+
     message: str
 
 
@@ -155,6 +184,7 @@ class ClearCacheResponse(BaseModel):
 
 @app.get("/")
 async def root():
+
     return {
         "status": "online",
         "service": "EduBridge AI Document Reader API",
@@ -171,6 +201,7 @@ async def root():
 
 @app.get("/api")
 async def api_info():
+
     return {
         "service": "EduBridge API",
         "status": "online",
@@ -189,23 +220,24 @@ async def api_info():
 # HELPER FUNCTIONS
 # ============================================================
 
-
 def get_pdf_path(doc_id: str) -> Path:
+
     return UPLOAD_DIR / f"{doc_id}.pdf"
 
 
 def get_text_path(doc_id: str) -> Path:
+
     return TEXT_DIR / f"{doc_id}.txt"
 
 
 def document_exists(doc_id: str) -> bool:
+
     return get_pdf_path(doc_id).exists()
 
 
 # ============================================================
 # LOAD DOCUMENT TEXT
 # ============================================================
-
 
 def load_document_text(doc_id: str) -> str:
 
@@ -218,6 +250,7 @@ def load_document_text(doc_id: str) -> str:
     if text_path.exists():
 
         try:
+
             text = text_path.read_text(
                 encoding="utf-8"
             )
@@ -240,6 +273,7 @@ def load_document_text(doc_id: str) -> str:
     pdf_path = get_pdf_path(doc_id)
 
     if not pdf_path.exists():
+
         raise FileNotFoundError(
             "Document not found"
         )
@@ -262,7 +296,7 @@ def load_document_text(doc_id: str) -> str:
 
         text_path.write_text(
             text,
-            encoding="utf-8"
+            encoding="utf-8",
         )
 
     except Exception as e:
@@ -278,7 +312,6 @@ def load_document_text(doc_id: str) -> str:
 # ============================================================
 # BUILD CHAT HISTORY
 # ============================================================
-
 
 def build_history(doc_id: str) -> list:
 
@@ -352,7 +385,9 @@ def build_history(doc_id: str) -> list:
                 else:
 
                     timestamp = row[0]
+
                     role = row[1]
+
                     message = row[2]
 
             except Exception as e:
@@ -402,7 +437,6 @@ def build_history(doc_id: str) -> list:
 # UPLOAD PDF
 # ============================================================
 
-
 @app.post(
     "/upload",
     response_model=UploadResponse,
@@ -432,6 +466,7 @@ async def upload_pdf(
     doc_id = str(uuid.uuid4())
 
     pdf_path = get_pdf_path(doc_id)
+
     text_path = get_text_path(doc_id)
 
     try:
@@ -555,7 +590,6 @@ async def upload_pdf(
 # ============================================================
 # ASK QUESTION
 # ============================================================
-
 
 @app.post(
     "/ask",
@@ -722,24 +756,28 @@ async def ask_question(
             answer,
             str,
         ):
+
             answer = str(answer)
 
         if not isinstance(
             suggested_questions,
             list,
         ):
+
             suggested_questions = []
 
         if not isinstance(
             structured_data,
             dict,
         ):
+
             structured_data = {}
 
         if not isinstance(
             citations,
             list,
         ):
+
             citations = []
 
         # ----------------------------------------------------
@@ -778,6 +816,7 @@ async def ask_question(
         )
 
     except HTTPException:
+
         raise
 
     except RuntimeError as e:
@@ -808,7 +847,6 @@ async def ask_question(
 # ============================================================
 # GET CHAT HISTORY
 # ============================================================
-
 
 @app.get(
     "/docs/{doc_id}/history",
@@ -853,7 +891,6 @@ async def get_history(
 # DELETE DOCUMENT
 # ============================================================
 
-
 @app.delete(
     "/docs/{doc_id}"
 )
@@ -870,6 +907,7 @@ async def delete_document(
     )
 
     file_deleted = False
+
     text_deleted = False
 
     # --------------------------------------------------------
@@ -944,7 +982,6 @@ async def delete_document(
 # CLEAR CACHE
 # ============================================================
 
-
 @app.post(
     "/cache/clear",
     response_model=ClearCacheResponse,
@@ -981,7 +1018,6 @@ async def clear_response_cache():
 # LLM STATS
 # ============================================================
 
-
 @app.get(
     "/stats"
 )
@@ -1008,7 +1044,6 @@ async def get_stats():
 # HEALTH CHECK
 # ============================================================
 
-
 @app.get(
     "/health"
 )
@@ -1016,6 +1051,7 @@ async def health_check():
 
     return {
         "status": "healthy",
+
         "timestamp": datetime.now().isoformat(),
 
         "gemini_key_loaded": bool(
@@ -1051,7 +1087,6 @@ async def health_check():
 # ============================================================
 # EXCEPTION HANDLERS
 # ============================================================
-
 
 @app.exception_handler(
     HTTPException
