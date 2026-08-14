@@ -88,7 +88,13 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        # Local development
         "http://localhost:5173",
+
+        # Vercel production frontend
+        "https://edu-bridge-six-eta.vercel.app",
+
+        # Previous frontend deployment
         "https://edubridge-frontend.onrender.com",
     ],
     allow_credentials=True,
